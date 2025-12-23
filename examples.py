@@ -136,18 +136,17 @@ def example_sensor_logging():
 
 
 # ============================================================================
-# Example 6: Interrupt handler (MicroPython only, P7_Analog_to_Digital)
+# Example 6: Interrupt handler with phpython (MicroPython only)
 # ============================================================================
 
 def example_interrupt_handler():
     """
-    Example of interrupt handling on MicroPython.
+    Example of interrupt handling on MicroPython using phpython API.
 
     NOTE: This example only works on MicroPython, not CircuitPython.
-    When you need interrupts, you'll re-flash with MicroPython and use
-    the machine API directly (this is platform-specific).
+    CircuitPython will raise NotImplementedError.
     """
-    from machine import Pin
+    from phpython import D
     import time
 
     count = 0
@@ -155,15 +154,45 @@ def example_interrupt_handler():
     def handle_interrupt(pin):
         global count
         count += 1
-        led.value(not led.value())
+        led.toggle()
 
-    led = Pin(15, Pin.OUT)  # Onboard LED
-    pir = Pin(21, Pin.IN)   # Motion sensor
+    # Create digital I/O objects
+    led = D(15, 'out')      # Onboard LED
+    pir = D(21, 'in')       # Motion sensor
 
-    pir.irq(trigger=Pin.IRQ_RISING, handler=handle_interrupt)
+    # Attach interrupt handler
+    pir.attach_irq(handle_interrupt, trigger='rising')
+
+    # Main loop - interrupt will fire independently
+    while True:
+        print(f"Interrupts detected: {count}")
+        time.sleep(1)
+
+
+# ============================================================================
+# Example 6b: Interrupt with multiple triggers (MicroPython only)
+# ============================================================================
+
+def example_interrupt_both_edges():
+    """
+    Example of interrupt handling on both rising and falling edges.
+    """
+    from phpython import D
+    import time
+
+    edge_count = 0
+
+    def handle_edge(pin):
+        global edge_count
+        edge_count += 1
+
+    button = D(22, 'in')
+
+    # Detect both press and release
+    button.attach_irq(handle_edge, trigger='both')
 
     while True:
-        print(f"Interrupts: {count}")
+        print(f"Button edges detected: {edge_count}")
         time.sleep(1)
 
 

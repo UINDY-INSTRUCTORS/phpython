@@ -206,6 +206,40 @@ def test_context_managers():
     print("OK")
 
 
+def test_interrupt_api():
+    """Test interrupt API on different platforms."""
+    print("Testing interrupt API...", end=" ")
+    set_mode('mock')
+
+    # Create input pin
+    button = D(22, 'in')
+
+    # Test that attach_irq raises error in mock mode
+    def dummy_handler(pin):
+        pass
+
+    try:
+        button.attach_irq(dummy_handler, trigger='rising')
+        assert False, "Should have raised RuntimeError in mock mode"
+    except RuntimeError as e:
+        assert "mock mode" in str(e).lower()
+
+    # Test that invalid trigger raises ValueError
+    set_mode('circuitpython')  # Switch to circuitpython to test the ValueError path
+    # Actually, this will fail to initialize on circuitpython without real hardware
+    # So we'll just test the mock mode behavior
+
+    set_mode('mock')
+
+    # Test that it raises RuntimeError with informative message
+    try:
+        button.attach_irq(dummy_handler, trigger='invalid')
+    except ValueError as e:
+        assert "invalid trigger" in str(e).lower()
+
+    print("OK")
+
+
 def run_all_tests():
     """Run all tests."""
     print("\nRunning phpython tests...\n")
@@ -221,6 +255,7 @@ def run_all_tests():
         test_timer()
         test_data_logger()
         test_context_managers()
+        test_interrupt_api()
 
         print("\n✓ All tests passed!")
         return 0

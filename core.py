@@ -159,6 +159,13 @@ class D:
     Usage:
         led = D(21, 'out')  # Digital output on pin 21
         btn = D(22, 'in')   # Digital input on pin 22
+
+    Interrupt Handling (MicroPython only):
+        def on_press(pin):
+            print("Button pressed!")
+
+        button = D(22, 'in')
+        button.attach_irq(on_press, trigger='rising')
     """
 
     def __init__(self, pin, mode='in'):
@@ -220,6 +227,71 @@ class D:
     @value.setter
     def value(self, v):
         self.set(v)
+
+    def attach_irq(self, handler, trigger='rising'):
+        """
+        Attach interrupt handler to digital input pin.
+
+        Only works on MicroPython. CircuitPython will raise NotImplementedError.
+
+        Args:
+            handler: Callback function that takes pin as argument
+                    def handler(pin):
+                        # Pin triggered
+                        pass
+            trigger: 'rising', 'falling', or 'both'
+
+        Returns:
+            IRQ object (MicroPython) or None (other platforms)
+
+        Raises:
+            NotImplementedError: If running on CircuitPython
+            ValueError: If invalid trigger value or output pin
+            RuntimeError: If running in mock mode
+
+        Example:
+            def on_motion(pin):
+                print("Motion detected!")
+
+            sensor = D(21, 'in')
+            sensor.attach_irq(on_motion, trigger='rising')
+        """
+        if self.mode != 'in':
+            raise ValueError("Can't attach interrupt to output pin")
+
+        # Validate trigger parameter first (platform-independent)
+        trigger_map = {
+            'rising': 1,  # Pin.IRQ_RISING value
+            'falling': 2,  # Pin.IRQ_FALLING value
+            'both': 3,  # Pin.IRQ_RISING | Pin.IRQ_FALLING
+        }
+        if trigger not in trigger_map:
+            raise ValueError(
+                f"Invalid trigger: '{trigger}'. "
+                f"Use 'rising', 'falling', or 'both'."
+            )
+
+        if PLATFORM == 'circuitpython':
+            raise NotImplementedError(
+                "Hardware interrupts are not supported on CircuitPython. "
+                "To use interrupts, flash your board with MicroPython instead. "
+                "See MIGRATION.md for examples."
+            )
+        elif PLATFORM == 'micropython':
+            # Map trigger string to machine.Pin constants
+            actual_trigger_map = {
+                'rising': Pin.IRQ_RISING,
+                'falling': Pin.IRQ_FALLING,
+                'both': Pin.IRQ_RISING | Pin.IRQ_FALLING,
+            }
+            # Attach interrupt to the underlying Pin object
+            irq = self._obj.irq(trigger=actual_trigger_map[trigger], handler=handler)
+            return irq
+        elif PLATFORM == 'mock':
+            raise RuntimeError(
+                "Interrupts not supported in mock mode. "
+                "Use set_mode('micropython') or flash actual hardware."
+            )
 
     def deinit(self):
         """Clean up the pin (CircuitPython only)."""

@@ -109,6 +109,25 @@ dac.write_voltage(2.5)  # Always voltage
 dac.write_raw(32768)    # Raw value (0-65535)
 ```
 
+### Interrupt Handler (MicroPython only)
+```python
+from phpython import D
+import time
+
+def on_button(pin):
+    print("Button pressed!")
+
+button = D(22, 'in')
+button.attach_irq(on_button, trigger='rising')  # MicroPython only!
+
+# Main loop continues while interrupt fires independently
+while True:
+    print("Running...")
+    time.sleep(1)
+```
+
+Note: Interrupts only work on **MicroPython**. CircuitPython will raise `NotImplementedError`.
+
 ## Platform Switching
 
 **CircuitPython:** Just run your code normally

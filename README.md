@@ -110,6 +110,25 @@ is_pressed = button.value  # Alternative syntax
 - `get()` - Read pin state (True/False)
 - `toggle()` - Toggle output
 - `value` - Property for get/set (use as `pin.value = 1` or `x = pin.value`)
+- `attach_irq(handler, trigger)` - Attach interrupt handler (MicroPython only)
+
+**Interrupt Handling (MicroPython only):**
+
+```python
+def on_button_press(pin):
+    print("Button pressed!")
+
+button = D(22, 'in')
+button.attach_irq(on_button_press, trigger='rising')
+```
+
+**Interrupt Methods:**
+- `attach_irq(handler, trigger='rising')` - Attach interrupt to input pin
+  - `handler` - Callback function that takes pin as argument
+  - `trigger` - 'rising', 'falling', or 'both'
+  - Raises `NotImplementedError` on CircuitPython
+  - Raises `ValueError` if pin is output
+  - Returns IRQ object (MicroPython) for managing the interrupt
 
 ### PWM: `P(pin, freq=1000, duty_percent=0)`
 
