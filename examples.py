@@ -11,6 +11,7 @@ These examples are based on the actual student projects from PH230.
 def example_adc_dac():
     """Read from ADC and write to DAC."""
     from phpython import A, DataLogger, countdown
+    import time
 
     # Create analog I/O objects
     adc1 = A(15)        # Analog input on pin 15
@@ -21,21 +22,26 @@ def example_adc_dac():
     countdown(3, "Discharging capacitor")
 
     # Log data while charging
-    with DataLogger('charge_curve.csv', ['time_s', 'v1', 'v2']) as log:
-        import time
+    with DataLogger('charge_curve.csv', ['time_s', 'vdac', 'v1', 'v2']) as log:
         t0 = time.monotonic_ns()
 
-        while True:
+        # Step DAC voltage from 0V to 3.3V
+        for step in range(0, 256, 5):
             elapsed = (time.monotonic_ns() - t0) / 1e9
+
+            # Set DAC voltage (smart API: 0-3.3 is voltage, >4 is raw)
+            vdac = (step / 255) * 3.3
+            dac.write(vdac)
+
             v1 = adc1.read_voltage()
             v2 = adc2.read_voltage()
 
-            log.log(elapsed, v1, v2)
+            log.log(elapsed, vdac, v1, v2)
 
             if v1 > 3.0:  # Stop when charged
                 break
 
-            time.sleep(0.01)
+            time.sleep(0.1)
 
 
 # ============================================================================

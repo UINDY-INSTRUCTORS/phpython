@@ -25,6 +25,14 @@ class A:
     Usage:
         adc = A(15)           # Analog input on pin 15
         dac = A(17, 'out')    # Analog output on pin 17
+
+    DAC Writing (smart detection):
+        dac.write(3.3)        # 3.3 volts (auto-detected as voltage)
+        dac.write(1.5)        # 1.5 volts
+        dac.write(0)          # 0 volts
+        dac.write(65535)      # Raw value (auto-detected as raw)
+        dac.write_voltage(2.5)  # Explicit voltage
+        dac.write_raw(32768)  # Explicit raw value
     """
 
     def __init__(self, pin, mode='in'):
@@ -73,17 +81,59 @@ class A:
 
     def write(self, value):
         """
-        Write value to DAC (0 to adc_max).
+        Write value to DAC.
+
+        Intelligently detects whether input is voltage or raw value:
+        - Values 0 to ~3.3V are treated as voltage
+        - Larger values are treated as raw ADC counts
+        - For explicit control, use write_voltage() or write_raw()
 
         Args:
-            value: Raw value, or voltage in volts if < 10
+            value: Voltage (0-3.3V) or raw value (0-65535)
+                   Auto-detects based on magnitude
         """
         if self.mode != 'out':
             raise ValueError("Can't write to input pin")
 
-        # Allow writing voltage directly (convenience)
-        if value < 10:
+        # Smart detection: if value <= ref_voltage (typically 3.3V),
+        # treat as voltage; otherwise treat as raw
+        # Using 4.0 as threshold for safety margin
+        if value <= 4.0:
+            # Treat as voltage
             value = int(value / self.vfactor)
+        # else: treat as raw, use value as-is
+
+        if PLATFORM == 'circuitpython':
+            self._obj.value = int(value)
+        elif PLATFORM == 'mock':
+            self._value = int(value)
+
+    def write_voltage(self, voltage):
+        """
+        Write voltage to DAC (explicit).
+
+        Args:
+            voltage: Voltage in volts (0 to ref_voltage)
+        """
+        if self.mode != 'out':
+            raise ValueError("Can't write to input pin")
+
+        value = int(voltage / self.vfactor)
+
+        if PLATFORM == 'circuitpython':
+            self._obj.value = int(value)
+        elif PLATFORM == 'mock':
+            self._value = int(value)
+
+    def write_raw(self, value):
+        """
+        Write raw ADC count to DAC (explicit).
+
+        Args:
+            value: Raw count (0 to adc_max, typically 0-65535)
+        """
+        if self.mode != 'out':
+            raise ValueError("Can't write to input pin")
 
         if PLATFORM == 'circuitpython':
             self._obj.value = int(value)

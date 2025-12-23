@@ -208,6 +208,52 @@ servo.deinit()
 
 ---
 
+### Example 4b: DAC (Analog Output)
+
+**Before (CircuitPython-only):**
+```python
+import board
+import analogio as aio
+
+ADCMAX = 2**16 - 1
+dac = aio.AnalogOut(board.IO17)
+vfactor = 3.3 / ADCMAX  # Manual calibration
+
+# Write 1.5V to DAC
+vout = 1.5
+vout_raw = int(vout / vfactor)
+dac.value = vout_raw
+
+# Write raw value
+dac.value = 32768
+```
+
+**After (phpython):**
+```python
+from phpython import A
+
+dac = A(17, 'out')
+
+# Write voltage (smart auto-detection)
+dac.write(1.5)      # 1.5V - intuitive!
+
+# Write raw value (auto-detected)
+dac.write(32768)    # Raw ADC count
+
+# Or explicit methods for clarity
+dac.write_voltage(1.5)  # Always voltage
+dac.write_raw(32768)    # Always raw value
+```
+
+**Changes:**
+- Replace `aio.AnalogOut(board.IO17)` with `A(17, 'out')`
+- Write voltage directly: `dac.write(1.5)` instead of manual math
+- No need to calculate `vfactor` or convert to raw values
+- Smart detection: 0-4.0 is voltage, larger values are raw
+- Optional explicit methods for clarity: `write_voltage()` or `write_raw()`
+
+---
+
 ### Example 5: Complete Multi-Sensor Project
 
 **Before (CircuitPython-only):**

@@ -93,6 +93,22 @@ with DataLogger('sensors.csv', ['time', 'sensor1', 'sensor2']) as log:
         log.log(timer.elapsed(), v1, v2)
 ```
 
+### Write to DAC (Analog Output)
+```python
+from phpython import A
+
+dac = A(17, 'out')  # Analog output on pin 17
+
+# Write voltage (smart auto-detection)
+dac.write(3.3)      # 3.3 volts
+dac.write(1.5)      # 1.5 volts
+dac.write(0)        # 0 volts
+
+# Or explicit methods for clarity
+dac.write_voltage(2.5)  # Always voltage
+dac.write_raw(32768)    # Raw value (0-65535)
+```
+
 ## Platform Switching
 
 **CircuitPython:** Just run your code normally

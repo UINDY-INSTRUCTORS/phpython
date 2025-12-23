@@ -32,20 +32,19 @@ with DataLogger('starter.csv', ['j', 'vdac', 'v1', 'v2', 'time']) as log:
 
         elapsed = (time.monotonic_ns() - t0) / 1e9
 
-        # Calculate DAC output voltage
-        # i goes from 0-255, map to 0-65535 (full ADC range)
-        vout_raw = int((i / 255) * (2**16 - 1))
+        # Calculate DAC output voltage (0 to 3.3V)
+        vout = (i / 255) * 3.3
 
-        # Write to DAC
-        dac.write(vout_raw)
+        # Write to DAC (in volts)
+        dac.write(vout)
 
         # Read analog inputs
         v1 = adc1.read_voltage()
         v2 = adc2.read_voltage()
 
         # Log data
-        log.log(i, vout_raw * (3.3 / (2**16 - 1)), v1, v2, elapsed)
-        print(f"{i},{vout_raw * (3.3 / (2**16 - 1)):.3f},{v1:.3f},{v2:.3f},{elapsed:.3f}")
+        log.log(i, vout, v1, v2, elapsed)
+        print(f"{i},{vout:.3f},{v1:.3f},{v2:.3f},{elapsed:.3f}")
 
 # Reset DAC
 dac.write(0)

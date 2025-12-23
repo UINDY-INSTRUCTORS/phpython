@@ -58,24 +58,34 @@ print(timer.elapsed())   # 1.0 seconds
 Read analog voltages or output analog voltages.
 
 ```python
-# Input
+# Input (ADC)
 adc = A(15)
 voltage = adc.read_voltage()  # Voltage in volts
 raw = adc.read()              # Raw ADC value (0 to 65535)
 
-# Output
+# Output (DAC) - Smart voltage detection
 dac = A(17, 'out')
-dac.write(2.5)                # Write voltage
-dac.write(32768)              # Or raw value
+dac.write(3.3)                # 3.3 volts (auto-detected)
+dac.write(1.5)                # 1.5 volts (auto-detected)
+dac.write(0)                  # 0 volts
+dac.write(65535)              # Raw value (auto-detected - too large for voltage)
+
+# Explicit methods (for clarity)
+dac.write_voltage(2.5)        # Always voltage
+dac.write_raw(32768)          # Always raw value
 ```
 
-**Properties:**
+**ADC Properties:**
 - `read()` - Get raw ADC value
 - `read_voltage()` - Get voltage in volts
-- `write(value)` - Set output (voltage < 10 is treated as volts, else raw)
 - `adc_max` - Maximum ADC value
 - `ref_voltage` - Reference voltage for conversions
 - `vfactor` - Conversion factor (volts per count)
+
+**DAC Properties:**
+- `write(value)` - Smart detection: 0-4.0 treated as voltage, larger values as raw
+- `write_voltage(voltage)` - Explicit voltage write (0 to ~3.3V)
+- `write_raw(value)` - Explicit raw write (0 to 65535)
 
 ### Digital I/O: `D(pin, mode='in')`
 

@@ -47,6 +47,39 @@ def test_analog_output_mock():
     print("OK")
 
 
+def test_dac_voltage_api():
+    """Test DAC voltage writing (smart auto-detection)."""
+    print("Testing DAC voltage API...", end=" ")
+    set_mode('mock')
+
+    dac = A(17, 'out')
+
+    # Test voltage writing (auto-detected)
+    dac.write(3.3)  # 3.3V
+    assert dac._value > 0
+    v1 = dac._value
+
+    dac.write(1.5)  # 1.5V
+    assert 0 < dac._value < v1  # Should be less than 3.3V
+
+    dac.write(0)  # 0V
+    assert dac._value == 0
+
+    # Test raw value writing (auto-detected as raw because > 4.0)
+    dac.write(32768)  # Raw value
+    assert dac._value == 32768
+
+    # Test explicit voltage writing
+    dac.write_voltage(2.5)
+    assert dac._value > 0
+
+    # Test explicit raw writing
+    dac.write_raw(16384)
+    assert dac._value == 16384
+
+    print("OK")
+
+
 def test_digital_output_mock():
     """Test digital output in mock mode."""
     print("Testing digital output (mock)...", end=" ")
@@ -181,6 +214,7 @@ def run_all_tests():
         test_platform_detection()
         test_analog_input_mock()
         test_analog_output_mock()
+        test_dac_voltage_api()
         test_digital_output_mock()
         test_digital_input_mock()
         test_pwm_mock()
