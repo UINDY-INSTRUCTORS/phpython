@@ -12,7 +12,7 @@ import os
 # We need the parent of phpython directory
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from phpython import set_mode, A, D, P, DataLogger, Timer
+from phpython import set_mode, A, D, P, I2C, DataLogger, Timer
 import time
 
 
@@ -240,6 +240,53 @@ def test_interrupt_api():
     print("OK")
 
 
+def test_i2c_mock():
+    """Test I2C bus abstraction in mock mode."""
+    print("Testing I2C (mock)...", end=" ")
+    set_mode('mock')
+
+    # Test basic initialization
+    i2c = I2C(scl=6, sda=8)
+    assert i2c.scl_pin == 6
+    assert i2c.sda_pin == 8
+    assert i2c.frequency == 400000
+
+    # Test with custom frequency
+    i2c2 = I2C(scl=6, sda=8, frequency=100000)
+    assert i2c2.frequency == 100000
+
+    # Test scan returns empty list in mock mode
+    devices = i2c.scan()
+    assert devices == []
+
+    # Test readfrom_mem returns zeros in mock mode
+    data = i2c.readfrom_mem(0x68, 0x00, 2)
+    assert len(data) == 2
+    assert data == bytes([0, 0])
+
+    # Test writeto_mem works in mock mode (no-op)
+    isnone = i2c.writeto_mem(0x68, 0x00, bytes([0x12, 0x34]))
+    # Should succeed without error
+
+    # Test readfrom returns zeros in mock mode
+    data = i2c.readfrom(0x68, 3)
+    assert len(data) == 3
+    assert data == bytes([0, 0, 0])
+
+    # Test writeto works in mock mode
+    nbytes = i2c.writeto(0x68, bytes([0x12, 0x34, 0x56]))
+    assert nbytes == 3
+
+    # Test context manager
+    with I2C(scl=6, sda=8) as i2c3:
+        devices = i2c3.scan()
+        assert devices == []
+
+    # Cleanup
+    i2c.deinit()
+    print("OK")
+
+
 def run_all_tests():
     """Run all tests."""
     print("\nRunning phpython tests...\n")
@@ -256,6 +303,7 @@ def run_all_tests():
         test_data_logger()
         test_context_managers()
         test_interrupt_api()
+        test_i2c_mock()
 
         print("\n✓ All tests passed!")
         return 0

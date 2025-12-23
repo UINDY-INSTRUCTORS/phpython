@@ -145,6 +145,45 @@ pwm.pulse_ms(1.5)           # 1.5 ms pulse width (for servos)
 - `pulse_ms(ms, period_ms=20)` - Set pulse width in milliseconds
 - `frequency` - Operating frequency in Hz
 
+### I2C Bus: `I2C(scl, sda, frequency=400000, timeout=None)`
+
+I2C bus abstraction for communicating with sensors and devices. Works seamlessly with Adafruit sensor libraries on both CircuitPython and MicroPython.
+
+```python
+# Create I2C bus on standard pins
+i2c = I2C(scl=6, sda=8)
+
+# Scan for connected devices
+devices = i2c.scan()
+print(f"Found devices at addresses: {devices}")
+
+# Use with Adafruit sensor libraries
+import adafruit_mcp9808
+sensor = adafruit_mcp9808.MCP9808(i2c)
+temperature = sensor.temperature
+```
+
+**Methods:**
+- `scan()` - Scan bus for connected devices, returns list of I2C addresses
+- `readfrom_mem(addr, memaddr, nbytes)` - Read from device memory
+- `writeto_mem(addr, memaddr, buf)` - Write to device memory
+- `readfrom(addr, nbytes)` - Read raw bytes from device
+- `writeto(addr, buf)` - Write raw bytes to device
+- `deinit()` - Clean up I2C bus
+
+**Parameters:**
+- `scl` - SCL (clock) pin number (e.g., 6)
+- `sda` - SDA (data) pin number (e.g., 8)
+- `frequency` - Bus frequency in Hz (default 400000 = 400 kHz)
+- `timeout` - Timeout in microseconds (MicroPython only)
+
+**Compatibility:**
+Works with all Adafruit sensor libraries including:
+- `adafruit_mcp9808` - Temperature sensor
+- `adafruit_mma8451` - 3-axis accelerometer
+- `adafruit_htu21d` - Temperature/humidity sensor
+- And many others!
+
 ## Utilities
 
 ### DataLogger

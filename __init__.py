@@ -13,9 +13,9 @@ Quick start:
     pwm = P(21, freq=50)  # PWM on pin 21 at 50 Hz
 """
 
-from .core import A, D, P, set_mode
+from .core import A, D, P, I2C, set_mode
 from .utils import DataLogger, Timer
 from .platforms import PLATFORM
 
 __version__ = "0.1.0"
-__all__ = ['A', 'D', 'P', 'set_mode', 'DataLogger', 'Timer', 'PLATFORM']
+__all__ = ['A', 'D', 'P', 'I2C', 'set_mode', 'DataLogger', 'Timer', 'PLATFORM']

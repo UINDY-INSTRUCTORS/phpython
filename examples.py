@@ -196,6 +196,127 @@ def example_interrupt_both_edges():
         time.sleep(1)
 
 
+# ============================================================================
+# Example 7: I2C Bus - Scanning for devices
+# ============================================================================
+
+def example_i2c_scan():
+    """
+    Scan I2C bus for connected devices.
+
+    Works on CircuitPython or MicroPython.
+    """
+    from phpython import I2C
+
+    # Create I2C bus on standard pins
+    i2c = I2C(scl=6, sda=8)
+
+    # Scan for devices
+    devices = i2c.scan()
+
+    if devices:
+        print(f"Found {len(devices)} I2C device(s):")
+        for addr in devices:
+            print(f"  Address: 0x{addr:02x} ({addr})")
+    else:
+        print("No I2C devices found")
+
+    i2c.deinit()
+
+
+# ============================================================================
+# Example 8: I2C with Temperature Sensor (MCP9808)
+# ============================================================================
+
+def example_i2c_temperature():
+    """
+    Example of reading temperature from MCP9808 sensor via I2C.
+
+    Requires: adafruit_mcp9808 library installed
+
+    This example shows how to use phpython's I2C abstraction with
+    standard Adafruit sensor libraries.
+    """
+    from phpython import I2C, DataLogger, Timer
+    import time
+
+    try:
+        import adafruit_mcp9808
+    except ImportError:
+        print("Requires: pip install adafruit-circuitpython-mcp9808")
+        return
+
+    # Create I2C bus
+    i2c = I2C(scl=6, sda=8, frequency=400000)
+
+    # Create sensor object
+    mcp = adafruit_mcp9808.MCP9808(i2c)
+
+    # Log temperature readings
+    with DataLogger('temperature.csv', ['time', 'celsius', 'fahrenheit']) as log:
+        timer = Timer()
+
+        for _ in range(60):  # Log for 60 seconds
+            temp_c = mcp.temperature
+            temp_f = temp_c * 9 / 5 + 32
+
+            elapsed = timer.elapsed()
+            log.log(elapsed, temp_c, temp_f)
+
+            print(f"{elapsed:.2f}s: {temp_c:.2f}°C / {temp_f:.2f}°F")
+
+            if elapsed >= 10:  # Just 10 seconds for demo
+                break
+
+            time.sleep(1)
+
+    i2c.deinit()
+
+
+# ============================================================================
+# Example 9: I2C with Accelerometer (MMA8451)
+# ============================================================================
+
+def example_i2c_accelerometer():
+    """
+    Example of reading acceleration from MMA8451 sensor via I2C.
+
+    Requires: adafruit_mma8451 library installed
+
+    This example shows how to use phpython's I2C abstraction with
+    a 3-axis accelerometer.
+    """
+    from phpython import I2C, DataLogger, Timer
+    import time
+
+    try:
+        import adafruit_mma8451
+    except ImportError:
+        print("Requires: pip install adafruit-circuitpython-mma8451")
+        return
+
+    # Create I2C bus
+    i2c = I2C(scl=6, sda=8)
+
+    # Create sensor object
+    sensor = adafruit_mma8451.MMA8451(i2c)
+
+    # Log acceleration data
+    with DataLogger('accelerometer.csv', ['time', 'x', 'y', 'z']) as log:
+        timer = Timer()
+
+        for _ in range(20):
+            x, y, z = sensor.acceleration
+            elapsed = timer.elapsed()
+
+            log.log(elapsed, x, y, z)
+            print(f"{elapsed:.2f}s: X={x:.3f} Y={y:.3f} Z={z:.3f}")
+
+            time.sleep(0.2)
+
+    i2c.deinit()
+
+
 if __name__ == '__main__':
     # Uncomment an example to test it
     # example_adc_dac()

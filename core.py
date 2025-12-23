@@ -1,5 +1,5 @@
 """
-Core hardware abstraction classes: A (Analog), D (Digital), P (PWM)
+Core hardware abstraction classes: A (Analog), D (Digital), P (PWM), I2C
 
 These provide a minimal, unified API across CircuitPython and MicroPython.
 """
@@ -12,8 +12,9 @@ if PLATFORM == 'circuitpython':
     import analogio
     import digitalio
     import pwmio
+    import busio
 elif PLATFORM == 'micropython':
-    from machine import ADC, Pin, PWM
+    from machine import ADC, Pin, PWM, I2C as MachineI2C
 elif PLATFORM == 'mock':
     pass  # Mock implementations below
 
@@ -380,6 +381,162 @@ class P:
         """Clean up the PWM (CircuitPython only)."""
         if PLATFORM == 'circuitpython' and hasattr(self._obj, 'deinit'):
             self._obj.deinit()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.deinit()
+
+
+class I2C:
+    """
+    I2C Bus abstraction for CircuitPython and MicroPython.
+
+    Works with Adafruit sensor libraries on both platforms without modification.
+
+    Usage:
+        i2c = I2C(scl=6, sda=8)  # Pins for I2C bus
+        mcp = adafruit_mcp9808.MCP9808(i2c)  # Pass to Adafruit drivers
+
+    Parameters:
+        scl: SCL (clock) pin number
+        sda: SDA (data) pin number
+        frequency: I2C frequency in Hz (default 400000 = 400 kHz)
+        timeout: Timeout in microseconds (MicroPython only, default None)
+    """
+
+    def __init__(self, scl, sda, frequency=400000, timeout=None):
+        """
+        Initialize I2C bus.
+
+        Args:
+            scl: SCL pin number (e.g., 6)
+            sda: SDA pin number (e.g., 8)
+            frequency: Bus frequency in Hz (default 400000)
+            timeout: Timeout in microseconds (MicroPython only)
+        """
+        self.scl_pin = scl
+        self.sda_pin = sda
+        self.frequency = frequency
+        self.timeout = timeout
+
+        if PLATFORM == 'circuitpython':
+            scl_obj = pin_number_to_pin(scl)
+            sda_obj = pin_number_to_pin(sda)
+            self._bus = busio.I2C(scl=scl_obj, sda=sda_obj, frequency=frequency)
+
+        elif PLATFORM == 'micropython':
+            # MicroPython I2C uses pin numbers directly
+            self._bus = MachineI2C(
+                id=0,
+                scl=Pin(scl),
+                sda=Pin(sda),
+                freq=frequency,
+                timeout=timeout if timeout else 2000,
+            )
+
+        elif PLATFORM == 'mock':
+            self._bus = None
+
+    def scan(self):
+        """
+        Scan I2C bus for connected devices.
+
+        Returns:
+            List of addresses (in decimal) of devices found on the bus
+        """
+        if PLATFORM == 'circuitpython':
+            return self._bus.scan()
+        elif PLATFORM == 'micropython':
+            return self._bus.scan()
+        elif PLATFORM == 'mock':
+            return []
+
+    def readfrom_mem(self, addr, memaddr, nbytes, *, addrsize=8):
+        """
+        Read from I2C device memory (advanced use).
+
+        Args:
+            addr: I2C device address
+            memaddr: Memory address to read from
+            nbytes: Number of bytes to read
+            addrsize: Address size in bits (default 8)
+
+        Returns:
+            Bytes read from device
+        """
+        if PLATFORM == 'circuitpython':
+            return self._bus.readfrom_mem(addr, memaddr, nbytes, addrsize=addrsize)
+        elif PLATFORM == 'micropython':
+            return self._bus.readfrom_mem(addr, memaddr, nbytes)
+        elif PLATFORM == 'mock':
+            return bytes([0] * nbytes)
+
+    def writeto_mem(self, addr, memaddr, buf, *, addrsize=8):
+        """
+        Write to I2C device memory (advanced use).
+
+        Args:
+            addr: I2C device address
+            memaddr: Memory address to write to
+            buf: Bytes to write
+            addrsize: Address size in bits (default 8)
+        """
+        if PLATFORM == 'circuitpython':
+            return self._bus.writeto_mem(addr, memaddr, buf, addrsize=addrsize)
+        elif PLATFORM == 'micropython':
+            return self._bus.writeto_mem(addr, memaddr, buf)
+        elif PLATFORM == 'mock':
+            pass
+
+    def readfrom(self, addr, nbytes, *, start=0, end=None):
+        """
+        Read from I2C device (advanced use).
+
+        Args:
+            addr: I2C device address
+            nbytes: Number of bytes to read
+            start: Start of slice (CircuitPython only)
+            end: End of slice (CircuitPython only)
+
+        Returns:
+            Bytes read from device
+        """
+        if PLATFORM == 'circuitpython':
+            return self._bus.readfrom(addr, nbytes, start=start, end=end)
+        elif PLATFORM == 'micropython':
+            return self._bus.readfrom(addr, nbytes)
+        elif PLATFORM == 'mock':
+            return bytes([0] * nbytes)
+
+    def writeto(self, addr, buf, *, start=0, end=None, stop=True):
+        """
+        Write to I2C device (advanced use).
+
+        Args:
+            addr: I2C device address
+            buf: Bytes to write
+            start: Start of slice (CircuitPython only)
+            end: End of slice (CircuitPython only)
+            stop: Send stop condition (CircuitPython only)
+
+        Returns:
+            Number of bytes written
+        """
+        if PLATFORM == 'circuitpython':
+            return self._bus.writeto(addr, buf, start=start, end=end, stop=stop)
+        elif PLATFORM == 'micropython':
+            return self._bus.writeto(addr, buf)
+        elif PLATFORM == 'mock':
+            return len(buf)
+
+    def deinit(self):
+        """Clean up I2C bus."""
+        if PLATFORM == 'circuitpython' and hasattr(self._bus, 'deinit'):
+            self._bus.deinit()
+        elif PLATFORM == 'micropython' and hasattr(self._bus, 'deinit'):
+            self._bus.deinit()
 
     def __enter__(self):
         return self

@@ -128,6 +128,25 @@ while True:
 
 Note: Interrupts only work on **MicroPython**. CircuitPython will raise `NotImplementedError`.
 
+### I2C Communication
+```python
+from phpython import I2C
+
+# Create I2C bus
+i2c = I2C(scl=6, sda=8)  # SCL on pin 6, SDA on pin 8
+
+# Scan for connected devices
+devices = i2c.scan()
+print(f"Found devices: {devices}")
+
+# Use with Adafruit sensor libraries
+import adafruit_mcp9808
+sensor = adafruit_mcp9808.MCP9808(i2c)
+print(f"Temperature: {sensor.temperature}°C")
+```
+
+Works with any Adafruit sensor library (MCP9808, MMA8451, HTU21D, etc.).
+
 ## Platform Switching
 
 **CircuitPython:** Just run your code normally
