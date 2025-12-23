@@ -60,8 +60,9 @@ class A:
         elif PLATFORM == 'micropython':
             if mode == 'in':
                 self._obj = ADC(Pin(pin))
-            else:
-                raise NotImplementedError("MicroPython DAC not yet supported in phpython")
+            else:  # 'out'
+                from machine import DAC
+                self._obj = DAC(Pin(pin))
 
         elif PLATFORM == 'mock':
             self._value = 0
@@ -106,6 +107,11 @@ class A:
 
         if PLATFORM == 'circuitpython':
             self._obj.value = int(value)
+        elif PLATFORM == 'micropython':
+            # MicroPython DAC uses 8-bit resolution (0-255)
+            # Convert from 16-bit normalized value to 8-bit
+            dac_value = int(value) >> 8  # Divide by 256
+            self._obj.write(dac_value)
         elif PLATFORM == 'mock':
             self._value = int(value)
 
@@ -123,6 +129,10 @@ class A:
 
         if PLATFORM == 'circuitpython':
             self._obj.value = int(value)
+        elif PLATFORM == 'micropython':
+            # MicroPython DAC uses 8-bit resolution (0-255)
+            dac_value = int(value) >> 8  # Divide by 256
+            self._obj.write(dac_value)
         elif PLATFORM == 'mock':
             self._value = int(value)
 
@@ -138,6 +148,11 @@ class A:
 
         if PLATFORM == 'circuitpython':
             self._obj.value = int(value)
+        elif PLATFORM == 'micropython':
+            # MicroPython DAC uses 8-bit resolution (0-255)
+            # Convert from 16-bit normalized value to 8-bit
+            dac_value = int(value) >> 8  # Divide by 256
+            self._obj.write(dac_value)
         elif PLATFORM == 'mock':
             self._value = int(value)
 
