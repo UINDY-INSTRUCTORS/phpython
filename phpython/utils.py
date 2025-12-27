@@ -5,6 +5,7 @@ These handle data logging, timing, and other repetitive tasks.
 """
 
 import time
+from .platforms import PLATFORM
 
 
 class Timer:
@@ -12,19 +13,42 @@ class Timer:
 
     def __init__(self):
         """Start the timer."""
-        self.start_time = time.monotonic_ns()
+        if PLATFORM == 'circuitpython':
+            self.start_time = time.monotonic_ns()
+            self._use_ns = True
+        elif PLATFORM == 'micropython':
+            self.start_time = time.ticks_ms()
+            self._use_ns = False
+        else:  # mock
+            self.start_time = time.time()
+            self._use_seconds = True
 
     def elapsed(self):
         """Get elapsed time in seconds."""
-        return (time.monotonic_ns() - self.start_time) / 1e9
+        if PLATFORM == 'circuitpython':
+            return (time.monotonic_ns() - self.start_time) / 1e9
+        elif PLATFORM == 'micropython':
+            return (time.ticks_ms() - self.start_time) / 1000
+        else:  # mock
+            return time.time() - self.start_time
 
     def elapsed_ms(self):
         """Get elapsed time in milliseconds."""
-        return (time.monotonic_ns() - self.start_time) / 1e6
+        if PLATFORM == 'circuitpython':
+            return (time.monotonic_ns() - self.start_time) / 1e6
+        elif PLATFORM == 'micropython':
+            return time.ticks_ms() - self.start_time
+        else:  # mock
+            return (time.time() - self.start_time) * 1000
 
     def reset(self):
         """Reset the timer."""
-        self.start_time = time.monotonic_ns()
+        if PLATFORM == 'circuitpython':
+            self.start_time = time.monotonic_ns()
+        elif PLATFORM == 'micropython':
+            self.start_time = time.ticks_ms()
+        else:  # mock
+            self.start_time = time.time()
 
 
 class DataLogger:
@@ -63,7 +87,7 @@ class DataLogger:
         """
         if len(values) != len(self.headers):
             raise ValueError(
-                f"Expected {len(self.headers)} values, got {len(values)}"
+                "Expected {} values, got {}".format(len(self.headers), len(values))
             )
 
         row = ','.join(str(v) for v in values)

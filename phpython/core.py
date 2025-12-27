@@ -283,8 +283,8 @@ class D:
         }
         if trigger not in trigger_map:
             raise ValueError(
-                f"Invalid trigger: '{trigger}'. "
-                f"Use 'rising', 'falling', or 'both'."
+                "Invalid trigger: '{}'. "
+                "Use 'rising', 'falling', or 'both'.".format(trigger)
             )
 
         if PLATFORM == 'circuitpython':

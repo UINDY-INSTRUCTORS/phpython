@@ -45,7 +45,12 @@ def pin_number_to_pin(pin_num):
 
 def get_adc_max():
     """Get the maximum ADC value for the current platform."""
-    return 2**16 - 1  # Standard for both platforms on ESP32
+    if PLATFORM == 'circuitpython':
+        return 2**16 - 1  # CircuitPython uses 16-bit on ESP32
+    elif PLATFORM == 'micropython':
+        return 2**12 - 1  # MicroPython ADC is 12-bit by default (0-4095)
+    else:  # mock
+        return 2**16 - 1
 
 
 def get_ref_voltage():
