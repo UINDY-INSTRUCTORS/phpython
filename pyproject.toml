@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=40", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phpython"
+version = "0.1.0"
+description = "A unified abstraction layer for CircuitPython and MicroPython"
+readme = "README.md"
+requires-python = ">=3.4"
+license = {text = "MIT"}
+authors = [
+    {name = "Steve", email = "steve@spvi.com"}
+]
+keywords = ["circuitpython", "micropython", "hardware", "education", "abstraction"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Education",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/phpython"
+Issues = "https://github.com/yourusername/phpython/issues"
+
+[tool.setuptools]
+packages = ["phpython"]

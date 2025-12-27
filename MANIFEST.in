@@ -1,0 +1,12 @@
+include README.md
+include LICENSE
+recursive-exclude phpython *.pyc
+recursive-exclude phpython __pycache__
+exclude examples.py
+exclude test_phpython.py
+recursive-exclude converted_projects *
+exclude QUICKSTART.md
+exclude STRUCTURE.md
+exclude MIGRATION.md
+exclude INSTRUCTOR_GUIDE.md
+exclude INDEX.md
