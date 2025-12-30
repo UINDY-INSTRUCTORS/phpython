@@ -1,36 +1,43 @@
-# Variables
-PORT = /dev/cu.usbmodem* # Adjust if your Mac uses a different name
+# --- Configuration ---
 LIB_SOURCE = ./phpython
-DEV_DEST = :lib/phpython
+# Change these if your Mac assigns specific names
+PORT = /dev/cu.usbmodem*
 
-.PHONY: reset deploy run experiment clean
+.PHONY: deploy clean-local check-platform
 
-# 1. Hard reset the board and wait for it to come back
-reset:
-	@echo "Hard resetting ESP32-S2..."
-	-mpremote run reset_board.py
-	@sleep 3
+# 1. Local Cleanup
+clean-local:
+	@echo "Cleaning local __pycache__..."
+	@find $(LIB_SOURCE) -name "__pycache__" -type d -exec rm -rf {} +
+	@find $(LIB_SOURCE) -name "*.pyc" -delete
 
-# 2. Deploy your library (Removes old version first to avoid conflicts)
-# Point directly to the source folder in your root
-deploy:
-	@echo "Cleaning local cache..."
-	-find $(LIB_SOURCE) -name "__pycache__" -type d -exec rm -rf {} +
-	-find $(LIB_SOURCE) -name "*.pyc" -delete
-	@echo "Deploying lean source to $(DEV_DEST)..."
+# 2. Platform Detection
+# This checks the internal sys.implementation name via mpremote
+detect:
+	@echo "Detecting board type..."
+	@PLATFORM=$$(mpremote exec "import sys; print(sys.implementation.name)" 2>/dev/null); \
+	if [ "$$PLATFORM" = "circuitpython" ]; then \
+		echo "Detected: CircuitPython"; \
+		make deploy-cp; \
+	elif [ "$$PLATFORM" = "micropython" ]; then \
+		echo "Detected: MicroPython"; \
+		make deploy-mp; \
+	else \
+		echo "Could not detect platform. Try 'make deploy-mp' or 'make deploy-cp' manually."; \
+	fi
+
+# 3. MicroPython Deploy (mpremote)
+deploy-mp: clean-local
+	@echo "Using mpremote to deploy..."
 	-mpremote mkdir :lib
-	-mpremote rm -r $(DEV_DEST)
-	-mpremote mkdir $(DEV_DEST)
-	mpremote cp -r $(LIB_SOURCE)/. $(DEV_DEST)/
+	-mpremote rm -r :lib/phpython
+	-mpremote mkdir :lib/phpython
+	mpremote cp -r $(LIB_SOURCE)/. :lib/phpython/
 
-# 3. Run the specific experiment script
-run:
-	@echo "Starting experiment..."
-	mpremote run starter_micro.py
-
-# 4. The "Golden Chain": Reset, Deploy, and Run in one go
-all: reset deploy run
-
-# 5. Quick helper to see what's on the board
-ls:
-	mpremote ls :lib/
+# 4. CircuitPython Deploy (ampy)
+# Since the drive is read-only, ampy handles the 'backdoor' via serial
+deploy-cp: clean-local
+	@echo "Using ampy to deploy (USB is Read-Only)..."
+	-ampy --port $(PORT) mkdir /lib 2>/dev/null || true
+	-ampy --port $(PORT) rmdir /lib/phpython 2>/dev/null || true
+	ampy --port $(PORT) put $(LIB_SOURCE) /lib/phpython
