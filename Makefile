@@ -1,43 +1,41 @@
 # --- Configuration ---
-LIB_SOURCE = ./phpython
-# Change these if your Mac assigns specific names
 PORT = /dev/cu.usbmodem*
+LIB_SOURCE = ./phpython
+DEST = /lib/phpython
+TEST_SCRIPT = simple_divider.py
 
-.PHONY: deploy clean-local check-platform
+.PHONY: deploy reset ls run test clean-local
 
-# 1. Local Cleanup
+# 1. Local Cleanup: Removes Mac metadata before sending to the board
 clean-local:
-	@echo "Cleaning local __pycache__..."
-	@find $(LIB_SOURCE) -name "__pycache__" -type d -exec rm -rf {} +
-	@find $(LIB_SOURCE) -name "*.pyc" -delete
+	@echo "Cleaning local __pycache__ and .pyc files..."
+	@find $(LIB_SOURCE) -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find $(LIB_SOURCE) -name "*.pyc" -delete 2>/dev/null || true
 
-# 2. Platform Detection
-# This checks the internal sys.implementation name via mpremote
-detect:
-	@echo "Detecting board type..."
-	@PLATFORM=$$(mpremote exec "import sys; print(sys.implementation.name)" 2>/dev/null); \
-	if [ "$$PLATFORM" = "circuitpython" ]; then \
-		echo "Detected: CircuitPython"; \
-		make deploy-cp; \
-	elif [ "$$PLATFORM" = "micropython" ]; then \
-		echo "Detected: MicroPython"; \
-		make deploy-mp; \
-	else \
-		echo "Could not detect platform. Try 'make deploy-mp' or 'make deploy-cp' manually."; \
-	fi
-
-# 3. MicroPython Deploy (mpremote)
-deploy-mp: clean-local
-	@echo "Using mpremote to deploy..."
-	-mpremote mkdir :lib
-	-mpremote rm -r :lib/phpython
-	-mpremote mkdir :lib/phpython
-	mpremote cp -r $(LIB_SOURCE)/. :lib/phpython/
-
-# 4. CircuitPython Deploy (ampy)
-# Since the drive is read-only, ampy handles the 'backdoor' via serial
-deploy-cp: clean-local
-	@echo "Using ampy to deploy (USB is Read-Only)..."
+# 2. Universal Deploy: Works for both MP and CP
+deploy: clean-local
+	@echo "Deploying to board at $(PORT)..."
 	-ampy --port $(PORT) mkdir /lib 2>/dev/null || true
-	-ampy --port $(PORT) rmdir /lib/phpython 2>/dev/null || true
-	ampy --port $(PORT) put $(LIB_SOURCE) /lib/phpython
+	-ampy --port $(PORT) rmdir $(DEST) 2>/dev/null || true
+	ampy --port $(PORT) put $(LIB_SOURCE) $(DEST)
+	@echo "Deployment successful."
+
+# 3. Hardware Reset: Fixes the 'Invalid State' DAC issue on ESP32
+reset:
+	@echo "Performing Hardware Reset..."
+	-ampy --port $(PORT) run reset_board.py
+	@echo "Waiting for board to reboot..."
+	@sleep 3
+
+# 4. Universal Run: Executes your experiment
+run:
+	@echo "Running $(TEST_SCRIPT)..."
+	ampy --port $(PORT) run $(TEST_SCRIPT)
+
+# 5. The "Golden Path": Reset, Deploy, and Run in one shot
+all: reset deploy run
+
+# 6. Inspection Helper
+ls:
+	@echo "Current files in $(DEST):"
+	@ampy --port $(PORT) ls $(DEST)
