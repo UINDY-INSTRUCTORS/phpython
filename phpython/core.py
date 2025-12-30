@@ -60,6 +60,8 @@ class A:
         elif PLATFORM == 'micropython':
             if mode == 'in':
                 self._obj = ADC(Pin(pin))
+                # Set 11dB attenuation for full 0-3.3V range
+                self._obj.atten(ADC.ATTN_11DB)
             else:  # 'out'
                 from machine import DAC
                 self._obj = DAC(Pin(pin))
@@ -78,8 +80,13 @@ class A:
 
     def read_voltage(self):
         """Read voltage (in volts)."""
-        raw = self.read()
-        return raw * self.vfactor
+        if PLATFORM == 'micropython':
+            # Use read_uv() for calibrated microvolts, convert to volts
+            return self._obj.read_uv() / 1_000_000
+        else:
+            # CircuitPython and mock use scaling factor
+            raw = self.read()
+            return raw * self.vfactor
 
     def write(self, value):
         """
@@ -91,7 +98,7 @@ class A:
         - For explicit control, use write_voltage() or write_raw()
 
         Args:
-            value: Voltage (0-3.3V) or raw value (0-65535)
+            value: Voltage (0-3.3V) or raw value (0-255 for MicroPython, 0-65535 for CircuitPython)
                    Auto-detects based on magnitude
         """
         if self.mode != 'out':
@@ -101,19 +108,26 @@ class A:
         # treat as voltage; otherwise treat as raw
         # Using 4.0 as threshold for safety margin
         if value <= 4.0:
-            # Treat as voltage
-            value = int(value / self.vfactor)
-        # else: treat as raw, use value as-is
-
-        if PLATFORM == 'circuitpython':
-            self._obj.value = int(value)
-        elif PLATFORM == 'micropython':
-            # MicroPython DAC uses 8-bit resolution (0-255)
-            # Convert from 16-bit normalized value to 8-bit
-            dac_value = int(value) >> 8  # Divide by 256
-            self._obj.write(dac_value)
-        elif PLATFORM == 'mock':
-            self._value = int(value)
+            # Treat as voltage - convert to platform-specific DAC value
+            if PLATFORM == 'micropython':
+                # MicroPython DAC is 8-bit (0-255)
+                dac_value = int(value / self.ref_voltage * 255)
+                self._obj.write(dac_value)
+            elif PLATFORM == 'circuitpython':
+                # CircuitPython DAC is 16-bit (0-65535)
+                self._obj.value = int(value / self.vfactor)
+            elif PLATFORM == 'mock':
+                self._value = int(value / self.vfactor)
+        else:
+            # Treat as raw value
+            if PLATFORM == 'circuitpython':
+                self._obj.value = int(value)
+            elif PLATFORM == 'micropython':
+                # For raw values, assume 16-bit input, scale to 8-bit
+                dac_value = int(value) >> 8
+                self._obj.write(dac_value)
+            elif PLATFORM == 'mock':
+                self._value = int(value)
 
     def write_voltage(self, voltage):
         """
@@ -125,16 +139,16 @@ class A:
         if self.mode != 'out':
             raise ValueError("Can't write to input pin")
 
-        value = int(voltage / self.vfactor)
-
         if PLATFORM == 'circuitpython':
-            self._obj.value = int(value)
+            value = int(voltage / self.vfactor)
+            self._obj.value = value
         elif PLATFORM == 'micropython':
             # MicroPython DAC uses 8-bit resolution (0-255)
-            dac_value = int(value) >> 8  # Divide by 256
+            dac_value = int(voltage / self.ref_voltage * 255)
             self._obj.write(dac_value)
         elif PLATFORM == 'mock':
-            self._value = int(value)
+            value = int(voltage / self.vfactor)
+            self._value = value
 
     def write_raw(self, value):
         """
