@@ -110,9 +110,24 @@ def get_board_info():
         try:
             import gc
             import machine
+            import os
 
             info['python_version'] = sys.version
-            info['processor'] = 'ESP32'
+
+            # Try to detect processor type
+            try:
+                # Try to get platform info from sys
+                if hasattr(sys, 'platform'):
+                    info['processor'] = sys.platform
+                # Check for specific board attributes
+                elif hasattr(os, 'uname'):
+                    uname = os.uname()
+                    info['processor'] = uname.machine if hasattr(uname, 'machine') else 'unknown'
+                else:
+                    info['processor'] = 'unknown'
+            except:
+                info['processor'] = 'unknown'
+
             info['frequency'] = machine.freq()
 
             # Memory info
