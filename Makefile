@@ -2,7 +2,17 @@
 PORT = /dev/cu.usbmodem*
 LIB_SOURCE = ./phpython
 DEST = /lib/phpython
-TEST_SCRIPT = simple_divider.py
+DEFAULT_SCRIPT = simple_divider.py
+BOARD_INFO = board_info.py
+
+# Allow running with: make run foo.py OR make run FILE=foo.py OR just make run
+# The first non-target argument becomes the script to run
+RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ifneq ($(RUN_ARGS),)
+FILE := $(word 1, $(RUN_ARGS))
+else
+FILE ?= $(DEFAULT_SCRIPT)
+endif
 
 .PHONY: deploy reset ls run test clean-local
 
@@ -29,8 +39,8 @@ reset:
 
 # 4. Universal Run: Executes your experiment
 run:
-	@echo "Running $(TEST_SCRIPT)..."
-	ampy --port $(PORT) run $(TEST_SCRIPT)
+	@echo "Running $(FILE)..."
+	ampy --port $(PORT) run $(FILE)
 
 # 5. The "Golden Path": Reset, Deploy, and Run in one shot
 all: reset deploy run
@@ -39,3 +49,12 @@ all: reset deploy run
 ls:
 	@echo "Current files in $(DEST):"
 	@ampy --port $(PORT) ls $(DEST)
+
+# 4. Universal Run: Executes your experiment
+board:
+	@echo "Running $(BOARD_INFO)..."
+	ampy --port $(PORT) run $(BOARD_INFO)
+
+# Special rule to prevent make from treating .py files as targets
+%.py:
+	@:

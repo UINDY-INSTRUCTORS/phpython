@@ -15,7 +15,7 @@ Quick start:
 
 from .core import A, D, P, I2C, set_mode
 from .utils import DataLogger, Timer, countdown
-from .platforms import PLATFORM
+from .platforms import PLATFORM, get_board_info, print_board_info
 
 __version__ = "0.1.0"
-__all__ = ['A', 'D', 'P', 'I2C', 'set_mode', 'DataLogger', 'Timer', 'countdown', 'PLATFORM']
+__all__ = ['A', 'D', 'P', 'I2C', 'set_mode', 'DataLogger', 'Timer', 'countdown', 'PLATFORM', 'get_board_info', 'print_board_info']
