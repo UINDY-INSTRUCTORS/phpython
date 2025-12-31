@@ -17,8 +17,9 @@ class Timer:
             self.start_time = time.monotonic_ns()
             self._use_ns = True
         elif PLATFORM == 'micropython':
-            self.start_time = time.ticks_ms()
-            self._use_ns = False
+            # Use microsecond resolution for better precision
+            self.start_time = time.ticks_us()
+            self._use_us = True
         else:  # mock
             self.start_time = time.time()
             self._use_seconds = True
@@ -28,7 +29,7 @@ class Timer:
         if PLATFORM == 'circuitpython':
             return (time.monotonic_ns() - self.start_time) / 1e9
         elif PLATFORM == 'micropython':
-            return (time.ticks_ms() - self.start_time) / 1000
+            return time.ticks_diff(time.ticks_us(), self.start_time) / 1_000_000
         else:  # mock
             return time.time() - self.start_time
 
@@ -37,16 +38,25 @@ class Timer:
         if PLATFORM == 'circuitpython':
             return (time.monotonic_ns() - self.start_time) / 1e6
         elif PLATFORM == 'micropython':
-            return time.ticks_ms() - self.start_time
+            return time.ticks_diff(time.ticks_us(), self.start_time) / 1000
         else:  # mock
             return (time.time() - self.start_time) * 1000
+
+    def elapsed_us(self):
+        """Get elapsed time in microseconds."""
+        if PLATFORM == 'circuitpython':
+            return (time.monotonic_ns() - self.start_time) / 1000
+        elif PLATFORM == 'micropython':
+            return time.ticks_diff(time.ticks_us(), self.start_time)
+        else:  # mock
+            return (time.time() - self.start_time) * 1_000_000
 
     def reset(self):
         """Reset the timer."""
         if PLATFORM == 'circuitpython':
             self.start_time = time.monotonic_ns()
         elif PLATFORM == 'micropython':
-            self.start_time = time.ticks_ms()
+            self.start_time = time.ticks_us()
         else:  # mock
             self.start_time = time.time()
 
