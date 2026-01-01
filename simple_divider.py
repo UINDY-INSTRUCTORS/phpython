@@ -20,7 +20,7 @@ dac.write(0)
 print("Discharging...")
 time.sleep(3)
 print(f"i,v_target,v1_measured,v2_measured")
-for i in range(0, 100, 5):
+for i in range(0, 256, 5):
     time.sleep(0.4)
 
     # Calculate target voltage
