@@ -1,8 +1,7 @@
 """
 Example: Voltage Divider Data Collection
-Using phpython abstraction layer for cross-platform compatibility
 
-This reproduces the functionality of starter_micro.py using only phpython features.
+No data logger, just print to console
 """
 
 from phpython import A
@@ -21,7 +20,7 @@ print("Discharging...")
 time.sleep(3)
 print(f"i,v_target,v1_measured,v2_measured")
 for i in range(0, 256, 5):
-    time.sleep(0.4)
+    time.sleep(0.4) # give the cap some time to keep up....
 
     # Calculate target voltage
     v_target = i * deltaVdac
