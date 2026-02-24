@@ -1,5 +1,5 @@
 # --- Configuration ---
-PORT = /dev/cu.usbmodem*
+PORT ?= /dev/cu.usbmodem*
 LIB_SOURCE = ./phpython
 DEST = /lib/phpython
 DEFAULT_SCRIPT = simple_divider.py
@@ -14,7 +14,7 @@ else
 FILE ?= $(DEFAULT_SCRIPT)
 endif
 
-.PHONY: deploy reset ls run test clean-local
+.PHONY: deploy reset ls run put test clean-local
 
 # 1. Local Cleanup: Removes Mac metadata before sending to the board
 clean-local:
@@ -54,6 +54,11 @@ ls:
 board:
 	@echo "Running $(BOARD_INFO)..."
 	ampy --port $(PORT) run $(BOARD_INFO)
+
+# 7. Copy a single file to the board root
+put:
+	@echo "Copying $(FILE) to board..."
+	ampy --port $(PORT) put $(FILE) /$(FILE)
 
 # Special rule to prevent make from treating .py files as targets
 %.py:

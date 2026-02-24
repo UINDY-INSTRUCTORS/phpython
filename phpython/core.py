@@ -433,9 +433,11 @@ class I2C:
         sda: SDA (data) pin number
         frequency: I2C frequency in Hz (default 400000 = 400 kHz)
         timeout: Timeout in microseconds (MicroPython only, default None)
+        pull: Enable internal pull-ups on SCL/SDA (MicroPython only, default True)
+        id: I2C peripheral ID (MicroPython only, default 0). Use 1 for pins on I2C1.
     """
 
-    def __init__(self, scl, sda, frequency=400000, timeout=None):
+    def __init__(self, scl, sda, frequency=400000, timeout=None, pull=True, id=0):
         """
         Initialize I2C bus.
 
@@ -444,11 +446,15 @@ class I2C:
             sda: SDA pin number (e.g., 8)
             frequency: Bus frequency in Hz (default 400000)
             timeout: Timeout in microseconds (MicroPython only)
+            pull: Enable internal pull-ups on SCL/SDA (MicroPython only)
+            id: I2C peripheral ID (MicroPython only, 0 or 1)
         """
         self.scl_pin = scl
         self.sda_pin = sda
         self.frequency = frequency
         self.timeout = timeout
+        self.pull = pull
+        self.id = id
 
         if PLATFORM == 'circuitpython':
             scl_obj = pin_number_to_pin(scl)
@@ -457,10 +463,11 @@ class I2C:
 
         elif PLATFORM == 'micropython':
             # MicroPython I2C uses pin numbers directly
+            pull_mode = Pin.PULL_UP if pull else None
             self._bus = MachineI2C(
-                id=0,
-                scl=Pin(scl),
-                sda=Pin(sda),
+                id=id,
+                scl=Pin(scl, pull=pull_mode),
+                sda=Pin(sda, pull=pull_mode),
                 freq=frequency,
                 timeout=timeout if timeout else 2000,
             )

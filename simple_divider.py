@@ -1,41 +1,56 @@
 """
-Example: Voltage Divider Data Collection
-
-No data logger, just print to console
+BJT measurement
 """
 
-from phpython import A
+from phpython import A, D, countdown, Timer
 import time
+V_DAC_MAX = 3.3             # max DAC output voltage
+deltaVdac = V_DAC_MAX / 255 # size of voltage step
 
-# --- CONFIGURATION ---
-V_DAC_MAX = 3.3
-deltaVdac = V_DAC_MAX / 255
 
-# Initialize hardware using phpython
-dac = A(17, 'out')  # DAC on pin 17
-adc1 = A(15)        # ADC on pin 15
-adc2 = A(10)        # ADC on pin 10
-dac.write(0)
-print("Discharging...")
-time.sleep(3)
-print(f"i,v_target,v1_measured,v2_measured")
-for i in range(0, 256, 5):
-    time.sleep(0.4) # give the cap some time to keep up....
+def main():
+    """Measure BJT characteristics."""
 
-    # Calculate target voltage
-    v_target = i * deltaVdac
+    # Create analog I/O objects for measurement
+    adc1 = A(10)        # Analog input: voltage measurement 3 (capacitor voltage)
+    adc2 = A(15)
+    adc3 = A(13)
+    
+    dac = A(17,'out')        # dac output
 
-    # Write DAC value
-    dac.write(v_target)  
+    # Create digital output for capacitor charging
+    dout = D(1, 'out')  # Digital output: charge capacitor when HIGH
 
-    # Read voltages (with averaging)
-    v1 = adc1.read_voltage()
-    v2 = adc2.read_voltage()
+    dout.set(1)
 
-    # Log data
-    print(f"{i},{v_target:.3f},{v1:.3f},{v2:.3f}")
+    # Let capacitor fully charge before starting
+    # Collect data during discharge
+    data = []
 
-# Reset DAC
-dac.write(0)
+    print(f"i,vdac,v1,v2,v3")
 
-print("Done.")
+
+    # Rapidly sample voltages during decay
+    for i in range(0, 256, 2):
+        time.sleep(0.001)  # 1ms between samples
+
+        # Collect voltages
+        v_target = i * deltaVdac
+
+        # Write DAC value
+        dac.write(v_target)  
+
+        # Read voltages (with averaging)
+        v1 = adc1.read_voltage()
+        v2 = adc2.read_voltage()
+        v3 = adc3.read_voltage()
+
+        # Log data
+        print(f"{i},{v_target:.3f},{v1:.3f},{v2:.3f},{v3:.3f}")
+
+    print("Done.")
+    dac.write(0)
+
+
+if __name__ == "__main__":
+    main()

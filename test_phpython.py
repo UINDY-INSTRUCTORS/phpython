@@ -255,6 +255,12 @@ def test_i2c_mock():
     i2c2 = I2C(scl=6, sda=8, frequency=100000)
     assert i2c2.frequency == 100000
 
+    # Test pull-up option
+    i2c_pull = I2C(scl=6, sda=8, pull=True)
+    assert i2c_pull.pull == True
+    i2c_no_pull = I2C(scl=6, sda=8)
+    assert i2c_no_pull.pull == False
+
     # Test scan returns empty list in mock mode
     devices = i2c.scan()
     assert devices == []
