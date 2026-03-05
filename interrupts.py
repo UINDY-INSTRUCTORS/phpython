@@ -2,14 +2,16 @@ from phpython import D, disable_irq, enable_irq
 import time
 
 count = 0
+IRQ_PIN = ?? # choose
+LED_PIN = 15 # no choice here!
 
 def handle_interrupt(pin):
     global count
     count += 1
     led.toggle()
 
-led = D(15, 'out')
-sig = D(2, 'in')
+led = D(LED_PIN, 'out')
+sig = D(IRQ_PIN, 'in')
 sig.attach_irq(handle_interrupt, trigger='rising')
 
 while True:
