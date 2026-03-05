@@ -117,6 +117,21 @@ class DataLogger:
         self.close()
 
 
+def disable_irq():
+    """Disable interrupts and return saved state. No-op on non-MicroPython platforms."""
+    if PLATFORM == 'micropython':
+        import machine
+        return machine.disable_irq()
+    return None
+
+
+def enable_irq(state):
+    """Re-enable interrupts using saved state. No-op on non-MicroPython platforms."""
+    if PLATFORM == 'micropython':
+        import machine
+        machine.enable_irq(state)
+
+
 def countdown(seconds, label=""):
     """
     Print a countdown timer (useful for startup delays).

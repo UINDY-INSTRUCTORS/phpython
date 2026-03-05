@@ -14,8 +14,8 @@ Quick start:
 """
 
 from .core import A, D, P, I2C, set_mode
-from .utils import DataLogger, Timer, countdown
+from .utils import DataLogger, Timer, countdown, disable_irq, enable_irq
 from .platforms import PLATFORM, get_board_info, print_board_info
 
 __version__ = "0.1.0"
-__all__ = ['A', 'D', 'P', 'I2C', 'set_mode', 'DataLogger', 'Timer', 'countdown', 'PLATFORM', 'get_board_info', 'print_board_info']
+__all__ = ['A', 'D', 'P', 'I2C', 'set_mode', 'DataLogger', 'Timer', 'countdown', 'disable_irq', 'enable_irq', 'PLATFORM', 'get_board_info', 'print_board_info']
