@@ -4,9 +4,9 @@ import time
 NUM_SECONDS = 120
 count = 0
 
-IRQ_PIN = ?? # choose
+IRQ_PIN = 2 # choose
 LED_PIN = 15 # no choice here!
-PWR_PIN = ?? # choose
+PWR_PIN = 40 # choose
 
 def handle_interrupt(pin):
     global count
