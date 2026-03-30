@@ -356,21 +356,20 @@ class P:
             duty_percent: Initial duty cycle as percentage (0-100)
             bits: PWM resolution in bits (default 16 for ESP32)
                   MicroPython: supports 10 (1023) or 16 (65535)
-                  CircuitPython: always uses 16 bits internally
+                  CircuitPython: always uses 16 bits (bits parameter is ignored)
         """
         self.pin_num = pin
         self.frequency = freq
         self._duty_percent = duty_percent
         self.bits = bits
-        self._max_duty = 2**bits - 1
 
         if PLATFORM == 'circuitpython':
             pin_obj = pin_number_to_pin(pin)
-            # CircuitPython always uses 16-bit internally
-            full_duty = 2**16 - 1
-            duty_cycle = int(full_duty * duty_percent / 100)
+            # CircuitPython always uses 16-bit internally; bits parameter is ignored
+            self.bits = 16
+            self._max_duty = 2**16 - 1
+            duty_cycle = int(self._max_duty * duty_percent / 100)
             self._obj = pwmio.PWMOut(pin_obj, frequency=freq, duty_cycle=duty_cycle)
-            self._full_duty = full_duty
 
         elif PLATFORM == 'micropython':
             from machine import Pin
@@ -383,9 +382,11 @@ class P:
                 except TypeError:
                     # Fallback for MicroPython versions that don't support bits parameter
                     pass
+            self._max_duty = 2**bits - 1
             self._obj.duty(int(self._max_duty * duty_percent / 100))
 
         elif PLATFORM == 'mock':
+            self._max_duty = 2**bits - 1
             self._duty_percent = duty_percent
 
     def duty(self, value=None):
@@ -404,7 +405,7 @@ class P:
         self._duty_percent = value
 
         if PLATFORM == 'circuitpython':
-            self._obj.duty_cycle = int(self._full_duty * value / 100)
+            self._obj.duty_cycle = int(self._max_duty * value / 100)
         elif PLATFORM == 'micropython':
             self._obj.duty(int(self._max_duty * value / 100))
         elif PLATFORM == 'mock':
