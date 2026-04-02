@@ -14,7 +14,7 @@ else
 FILE ?= $(DEFAULT_SCRIPT)
 endif
 
-.PHONY: deploy reset ls run put test clean-local
+.PHONY: deploy reset ls run put test clean-local bump-patch bump-minor bump-major
 
 # 1. Local Cleanup: Removes Mac metadata before sending to the board
 clean-local:
@@ -59,6 +59,16 @@ board:
 put:
 	@echo "Copying $(FILE) to board..."
 	ampy --port $(PORT) put $(FILE) /$(FILE)
+
+# Version bumping (requires: pip install bump-my-version)
+bump-patch:
+	bump-my-version bump patch
+
+bump-minor:
+	bump-my-version bump minor
+
+bump-major:
+	bump-my-version bump major
 
 # Special rule to prevent make from treating .py files as targets
 %.py:
