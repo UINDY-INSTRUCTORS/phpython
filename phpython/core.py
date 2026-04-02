@@ -340,13 +340,12 @@ class P:
     PWM (Pulse Width Modulation) abstraction.
 
     Usage:
-        servo = P(21, freq=50)           # 50 Hz PWM on pin 21 (16-bit default)
-        servo = P(21, freq=50, bits=10)  # 10-bit resolution (legacy)
-        servo.duty(50)                   # 50% duty cycle
-        servo.pulse_ms(1.5)              # 1.5 ms pulse width
+        servo = P(21, freq=50)   # 50 Hz PWM on pin 21
+        servo.duty(50)           # 50% duty cycle
+        servo.pulse_ms(1.5)      # 1.5 ms pulse width
     """
 
-    def __init__(self, pin, freq=1000, duty_percent=0, bits=16):
+    def __init__(self, pin, freq=1000, duty_percent=0):
         """
         Initialize PWM pin.
 
@@ -354,20 +353,14 @@ class P:
             pin: Pin number (e.g., 21)
             freq: Frequency in Hz (default 1000)
             duty_percent: Initial duty cycle as percentage (0-100)
-            bits: PWM resolution in bits (default 16 for ESP32)
-                  MicroPython: supports 10 (1023) or 16 (65535)
-                  CircuitPython: always uses 16 bits (bits parameter is ignored)
         """
         self.pin_num = pin
         self.frequency = freq
         self._duty_percent = duty_percent
-        self.bits = bits
+        self._max_duty = 65535
 
         if PLATFORM == 'circuitpython':
             pin_obj = pin_number_to_pin(pin)
-            # CircuitPython always uses 16-bit internally; bits parameter is ignored
-            self.bits = 16
-            self._max_duty = 2**16 - 1
             duty_cycle = int(self._max_duty * duty_percent / 100)
             self._obj = pwmio.PWMOut(pin_obj, frequency=freq, duty_cycle=duty_cycle)
 
@@ -375,18 +368,15 @@ class P:
             from machine import Pin
             self._obj = PWM(Pin(pin))
             self._obj.freq(freq)
-            # Set resolution if supported (MicroPython on ESP32)
-            if hasattr(self._obj, 'init'):
-                try:
-                    self._obj.init(bits=bits)
-                except TypeError:
-                    # Fallback for MicroPython versions that don't support bits parameter
-                    pass
-            self._max_duty = 2**bits - 1
-            self._obj.duty(int(self._max_duty * duty_percent / 100))
+            # Prefer duty_u16() (MicroPython >= 1.18) for 16-bit resolution.
+            # Fall back to duty() which is 10-bit (0-1023) on older firmware.
+            self._use_u16 = hasattr(self._obj, 'duty_u16')
+            if self._use_u16:
+                self._obj.duty_u16(int(self._max_duty * duty_percent / 100))
+            else:
+                self._obj.duty(int(1023 * duty_percent / 100))
 
         elif PLATFORM == 'mock':
-            self._max_duty = 2**bits - 1
             self._duty_percent = duty_percent
 
     def duty(self, value=None):
@@ -407,7 +397,10 @@ class P:
         if PLATFORM == 'circuitpython':
             self._obj.duty_cycle = int(self._max_duty * value / 100)
         elif PLATFORM == 'micropython':
-            self._obj.duty(int(self._max_duty * value / 100))
+            if self._use_u16:
+                self._obj.duty_u16(int(self._max_duty * value / 100))
+            else:
+                self._obj.duty(int(1023 * value / 100))
         elif PLATFORM == 'mock':
             pass
 
